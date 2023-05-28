@@ -31,6 +31,7 @@ import numpy as np
 import torch.nn as nn
 from torch.utils.data import Dataset, Sampler
 import os
+import json
 import h5py
 
 import data.transition_dataset as trns_dataset
@@ -62,7 +63,8 @@ class DspritesDataset(trns_dataset.TransitionDataset):
                  dist: str = 'uniform',
                  return_integer_actions: bool = False,
                  rotate_actions: float = 0,
-                 normalize_actions:bool=True):
+                 normalize_actions:bool=True,
+                 combinatorial_indices_file: str = None):
         super().__init__(rseed, transitions_on, n_transitions)
 
         # Distribution
@@ -72,6 +74,13 @@ class DspritesDataset(trns_dataset.TransitionDataset):
         # Number of samples
         self.num_train = num_train
         self.num_val = num_val
+        
+        # Combinatorial benchmark
+         if combinatorial_indices_file:
+            with open(combinatorial_indices_file, "r") as json_file:
+                self.combinatorial_indices = json.load(json_file)
+        
+        self.combinatorial_indices_file = combinatorial_indices_file
 
 
         # latents config
@@ -158,6 +167,47 @@ class DspritesDataset(trns_dataset.TransitionDataset):
 
             self.train_dj[...,:2] = self.train_dj[...,:2] @ self._rot_mat
             self.val_dj[...,:2] = self.val_dj[...,:2] @ self._rot_mat
+            
+        if self.combinatorial_indices_file:
+            self._process_dataset_with_combinatorial_indices()
+
+    
+    def _process_dataset_with_combinatorial_indices(self):
+        """Remove from train set that the triplets that contain
+        at least one combinatorial image idx and keep only triplets
+        of validation set that contain only combinatorial indices.
+
+        The aim of this function is to obtain a dataset in which
+        no samples from test has been seen at training time
+        """
+
+        # For train set remove the incides
+        new_train_idx = []
+
+        for k in range(copy.deepcopy(self.train_idx.shape[0])):
+            if not set(self.all_indices[self.train_idx[k]].tolist()).intersection(set(self.combinatorial_indices)):
+                new_train_idx.append(self.train_idx[k].tolist())
+
+        self.train_idx = np.asarray(new_train_idx)
+        self.num_train = len(self.train_idx)
+
+        # For valid set keep the indices
+        new_val_idx = []
+        new_val_dj = []
+
+        for k in range(copy.deepcopy(self.val_idx.shape[0])):
+            if set([self.all_indices[self.val_idx[k, 0]]]).intersection(set(self.combinatorial_indices)):
+                new_val_idx.append(self.val_idx[k].tolist())
+                new_val_dj.append(self.val_dj[k].tolist())
+
+
+        self.val_idx = np.asarray(new_val_idx)
+        self.val_dj = np.asarray(new_val_dj)
+
+        js = {str(type(self.val_idx)): self.val_idx.tolist()}
+        with open("test.json", "w") as f:
+            json.dump(js, f)
+
             
 
     def _process_hdf5(self):
