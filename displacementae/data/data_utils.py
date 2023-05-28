@@ -62,10 +62,11 @@ def setup_dsprites_dataset(config, mode='autoencoder'):
         dist=config.distrib,
         return_integer_actions=config.integer_actions,
         rotate_actions=config.rotate_actions,
+        combinatorial_indices_file=config.combinatorial_indices
         )
     dloader = DataLoader(
         dataset=dhandler, batch_size=config.batch_size,
-        shuffle=config.shuffle)
+        shuffle=config.shuffle, drop_last=True)
     return dhandler, dloader
 
 
