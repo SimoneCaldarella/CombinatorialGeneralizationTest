@@ -1,5 +1,5 @@
 ========================================================================
-Symmetry Based Representation Learning through Homomorphism AutoEncoders
+Combinatorial Generalization with Homomorphism Autoencoder
 ========================================================================
 
 
