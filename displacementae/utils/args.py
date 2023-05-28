@@ -29,6 +29,8 @@ def data_args(parser, mode='autoencoder'):
     dgroup = parser.add_argument_group('Data options')
     dgroup.add_argument('--dataset', type=str, default='armeye',
                         help='Name of dataset', choices=['armeye', 'dsprites', 'obj3d'])
+    dgroup.add_argument('--combinatorial_indices', type=str, default=None,
+                        help='File containing list of indices of images to test combinatorial generalization')
     dgroup.add_argument('--n_joints', type=int, default=3,
                         help='Number of joints in the robot')
     dgroup.add_argument('--fixed_in_sampling', type=str, default='',
