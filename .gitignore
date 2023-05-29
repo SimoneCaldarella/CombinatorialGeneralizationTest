@@ -5,7 +5,6 @@
 *.sh
 *.pickle
 *.txt
-*.pdf
 *.tar
 *.jpg
 *.png
